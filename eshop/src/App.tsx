@@ -12,8 +12,10 @@ function App() {
 	const [tax, setTax] = useState(.1);
 	
 	useEffect(() => {
+		const cartId = 1;
+	
 		const fetchData = async () => {
-			const response = await fetch('http://localhost:3000/cart')
+			const response = await fetch(`http://localhost:3000/cart/${cartId}`)
 			if (!response.ok) {
 				throw new Error(response.statusText);
 				return;

@@ -1,121 +1,124 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
+import { useState, useEffect, useMemo } from 'react'
 import './App.css'
 
+interface CartItem {
+	itemId:    number,
+	name:      string,
+	imageUrl:  string,
+	unitPrice: number,
+	quantity:  number,
+}
+
 function App() {
-  const [count, setCount] = useState(0)
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [shipping, setShipping] = useState<number>(0);
+  const [tax, setTax] = useState<number>(0);
+  const subTotal = useMemo(() => cartItems.reduce((accum: number, item: CartItem) => accum + item.quantity * item.unitPrice, 0), [cartItems]);
+  const total = useMemo(() => subTotal + shipping + tax, [subTotal, shipping, tax]);
+  
+  useEffect(() => {
+	setError(null);
+	const fetchData = async () => {
+		setIsLoading(true);
+		const response = await fetch(`http://localhost:3001/cart/1`);
+		if (!response.ok) {
+			setIsLoading(false);
+			setError(response.statusText);
+			return;
+		}
+			
+		const json = await response.json();
+		setCartItems(json.cartItems);
+		setShipping(json.shipping);
+		setTax(json.tax);
+		setIsLoading(false);
+	}
+	
+	fetchData();
+  }, [])
+  
+  const updateItem = async (item: CartItem, quantity: number) => {
+	setError(null);
+	const updateResponse = await fetch(`http://localhost:3001/cart/1/items/${item.itemId}`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify({quantity})
+	})
+	
+	if (!updateResponse.ok) {
+		setError(updateResponse.statusText);
+		return;
+	}
+	
+	const json = await updateResponse.json();
+	setCartItems(prev => {
+		const next = prev.map((i) => i.itemId === json.item.itemId ? json.item : i);
+		return next;
+	});
+	setTax(json.tax);
+	
+  }
+  
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+	alert("handleSubmit");
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+<div className="container">
+    <h1>Shopping Cart</h1>
+    
+	{isLoading && <div>LOADING...</div>}
+	<form onSubmit={handleSubmit}>
+    <div className="cart-grid">
+      <div className="cart-items">
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+		{cartItems.map((item) =>
+        <div className="item" key={item.itemId}>
+          <div className="item-image"><img src={item.imageUrl}/></div>
+          <div className="item-details">
+            <div className="item-name">{item.name}</div>
+            <div className="item-price">${item.unitPrice.toFixed(2)}</div>
+            <div className="item-quantity">
+              <button type="button" className="quantity-btn" onClick={() => updateItem(item, item.quantity - 1)}>-</button>
+              <span className="quantity-display">{item.quantity}</span>
+              <button type="button" className="quantity-btn" onClick={() => updateItem(item, item.quantity + 1)}>+</button>
+              <button type="button" className="remove-btn" onClick={() => updateItem(item, 0)}>Remove</button>
+            </div>
+          </div>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+		)}
+		
+      </div>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      <div className="cart-summary">
+        <div className="summary-row">
+          <span>Subtotal</span>
+          <span>${subTotal.toFixed(2)}</span>
+        </div>
+        <div className="summary-row">
+          <span>Shipping</span>
+          <span>${shipping.toFixed(2)}</span>
+        </div>
+        <div className="summary-row">
+          <span>Tax</span>
+          <span>${tax.toFixed(2)}</span>
+        </div>
+        <div className="summary-row total">
+          <span>Total</span>
+          <span>${total.toFixed(2)}</span>
+        </div>
+        <button type="submit" className="checkout-btn">Proceed to Checkout</button>
+        <a href="#" className="continue-shopping">Continue Shopping</a>
+      </div>
+    </div>
+	</form>
+	{error && <div>{error}</div>}
+  </div>    
   )
 }
 

@@ -3,9 +3,10 @@ import cors from 'cors';
 import db from './database';
 
 const app = express();
-const PORT = 3000;
+const PORT = 3001;
+const TAX_RATE = 0.1;
 
-app.use(cors());
+app.use(cors());''
 app.use(express.json());
 
 app.get('/cart/:cartId', (req, res) => {
@@ -22,6 +23,9 @@ app.get('/cart/:cartId', (req, res) => {
   const items = db.prepare('SELECT * FROM cart_items WHERE cart_id = ?').all(cart.cart_id) as
     { item_id: number; cart_id: number; name: string; image_url: string; unit_price: number; quantity: number }[];
 
+  const subtotal = items.reduce((sum, i) => sum + i.unit_price * i.quantity, 0);
+  const tax = subtotal * TAX_RATE;
+
   res.json({
     cartItems: items.map(i => ({
       itemId:    i.item_id,
@@ -31,7 +35,7 @@ app.get('/cart/:cartId', (req, res) => {
       quantity:  i.quantity,
     })),
     shipping: cart.shipping,
-    tax:      cart.tax,
+    tax
   });
 });
 
@@ -64,12 +68,21 @@ app.post('/cart/:cartId/items/:itemId', (req, res) => {
     .get(itemId, cartId) as
     { item_id: number; cart_id: number; name: string; image_url: string; unit_price: number; quantity: number };
 
+  const allItems = db.prepare('SELECT unit_price, quantity FROM cart_items WHERE cart_id = ?').all(cartId) as
+    { unit_price: number; quantity: number }[];
+  const subtotal = allItems.reduce((sum, i) => sum + i.unit_price * i.quantity, 0);
+  const newTax = subtotal * TAX_RATE;
+  db.prepare('UPDATE cart SET tax = ? WHERE cart_id = ?').run(newTax, cartId);
+
   res.json({
-    itemId:    updated.item_id,
-    name:      updated.name,
-    imageUrl:  updated.image_url,
-    unitPrice: updated.unit_price,
-    quantity:  updated.quantity,
+	item: {
+		itemId:    updated.item_id,
+		name:      updated.name,
+		imageUrl:  updated.image_url,
+		unitPrice: updated.unit_price,
+		quantity:  updated.quantity,
+	  },
+	tax: newTax
   });
 });
 

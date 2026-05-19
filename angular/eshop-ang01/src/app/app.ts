@@ -1,9 +1,8 @@
-import { Component, signal, OnInit } from '@angular/core';
+import { Component, signal, computed, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http'
 import { CurrencyPipe } from '@angular/common'
 import { RouterOutlet } from '@angular/router';
 import { CartItem } from './cart-item';
-import { firstValueFrom, pipe, map } from 'rxjs'
 
 @Component({
   selector: 'app-root',
@@ -14,23 +13,21 @@ import { firstValueFrom, pipe, map } from 'rxjs'
 export class App implements OnInit {
   protected readonly title = signal('eshop-ang01');
   
-  //equivalentes ao setState
+  //equivalentes ao useState
   baseApiUrl: string = 'http://localhost:3001';
-  isLoading: boolean = false;
-  error: string | null = null;
-  cartItems: CartItem[] = [];
-  shipping: number = 0;
-  tax: number = 0;
+  isLoading = signal(false);
+  error = signal<string | null>(null);
+  cartItems = signal<CartItem[]>([]);
+  shipping = signal(0);
+  tax = signal(0);
   cartId: number = 1;
 
-  //equivalentes ao setMemo (calculados automaticamente)
-  get subtotal() {
-	return this.cartItems.reduce((accum: number, current: CartItem) => accum + (current.quantity * current.unitPrice), 0);
-  }
+  //equivalentes ao useMemo (calculados automaticamente)
+  readonly subtotal = computed(() =>
+    this.cartItems().reduce((accum, current) => accum + (current.quantity * current.unitPrice), 0)
+  );
   
-  get total() {
-	return this.subtotal + this.shipping + this.tax;
-  }
+  readonly total = computed(() => this.subtotal() + this.shipping() + this.tax());
   
   //private faz o http ser injetado e pode ser usado com this.http
   constructor(private http: HttpClient) {
@@ -39,18 +36,19 @@ export class App implements OnInit {
   
   //equivalente ao useEffect
   ngOnInit() {
-	this.isLoading = true;
+	this.isLoading.set(true);
 	
 	this.http.get(`${this.baseApiUrl}/cart/${this.cartId}`).subscribe({
 		next: (json: any) => {
-			this.isLoading = false;
-			this.cartItems = json.cartItems;
-			this.tax = json.tax;
-			this.error = null;
+			this.isLoading.set(false);
+			this.cartItems.set(json.cartItems);
+			this.shipping.set(json.shipping);
+			this.tax.set(json.tax);
+			this.error.set(null);
 		},
 		error: (err: any) => {
-			this.error = err.statusText;
-			this.isLoading = false;
+			this.error.set(err.statusText);
+			this.isLoading.set(false);
 		}
 	});
 
@@ -61,11 +59,11 @@ export class App implements OnInit {
 		.subscribe({
 			next: (json: any) => {
 				console.log(JSON.stringify(json.item));
-				this.cartItems = this.cartItems.map((i : CartItem) => i.itemId === json.item.itemId ? json.item : i);
-				this.tax = json.tax;
-				this.error = null;
+				this.cartItems.update(items => items.map(i => i.itemId === json.item.itemId ? json.item : i));
+				this.tax.set(json.tax);
+				this.error.set(null);
 			},
-			error: (err: any) => { this.error = err.statusText }
+			error: (err: any) => { this.error.set(err.statusText); }
 			})
 	}
 }

@@ -24,7 +24,7 @@ app.get('/cart/:cartId', (req, res) => {
     { item_id: number; cart_id: number; name: string; image_url: string; unit_price: number; quantity: number }[];
 
   const subtotal = items.reduce((sum, i) => sum + i.unit_price * i.quantity, 0);
-  const tax = subtotal * TAX_RATE;
+  const tax = parseFloat((subtotal * TAX_RATE).toFixed(2));
 
   res.json({
     cartItems: items.map(i => ({
@@ -71,7 +71,7 @@ app.post('/cart/:cartId/items/:itemId', (req, res) => {
   const allItems = db.prepare('SELECT unit_price, quantity FROM cart_items WHERE cart_id = ?').all(cartId) as
     { unit_price: number; quantity: number }[];
   const subtotal = allItems.reduce((sum, i) => sum + i.unit_price * i.quantity, 0);
-  const newTax = subtotal * TAX_RATE;
+  const newTax = parseFloat((subtotal * TAX_RATE).toFixed(2));
   db.prepare('UPDATE cart SET tax = ? WHERE cart_id = ?').run(newTax, cartId);
 
   res.json({

@@ -1,13 +1,13 @@
 {
-  "name": "eshop-ang02",
+  "name": "eshop-ang03",
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve --hmr",
+    "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "serve:ssr:eshop-ang02": "node dist/eshop-ang02/server/server.mjs"
+    "serve:ssr:eshop-ang03": "node dist/eshop-ang03/server/server.mjs"
   },
   "private": true,
   "packageManager": "npm@11.9.0",

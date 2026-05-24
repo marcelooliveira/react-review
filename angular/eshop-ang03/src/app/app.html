@@ -1,15 +1,14 @@
 <div class="container">
 <h1>Shopping Cart</h1>
 
-@if (isLoading()) {
-	<div>LOADING...</div>
-}
+@if(isLoading()) { <div>Loading...</div> }
+
 <form (submit)="onSubmit($event)">
 <div class="cart-grid">
   <div class="cart-items">
-	@for (item of cartItems(); track item.itemId) {  
+	@for(item of cartItems(); track item.itemId) {
 	<div class="item">
-	  <div class="item-image"><img [src]="item.imageUrl"/></div>
+	  <div class="item-image">Image</div>
 	  <div class="item-details">
 		<div class="item-name">{{item.name}}</div>
 		<div class="item-price">{{item.unitPrice | currency}}</div>
@@ -17,13 +16,13 @@
 		  <button type="button" class="quantity-btn" (click)="updateItem(item, item.quantity - 1)">-</button>
 		  <span class="quantity-display">{{item.quantity}}</span>
 		  <button type="button" class="quantity-btn" (click)="updateItem(item, item.quantity + 1)">+</button>
-		  <button type="button" class="remove-btn" (click)="updateItem(item, 0)">Remove</button>
+		  <button type="button" class="remove-btn" (click)="removeItem(item)">Remove</button>
 		</div>
 	  </div>
 	</div>
-	}
+	}	
   </div>
-
+ 
   <div class="cart-summary">
 	<div class="summary-row">
 	  <span>Subtotal</span>
@@ -47,8 +46,7 @@
 </div>
 </form>
 </div>
-@if (error()) {
-	<div>{{error()}}</div>
-}
+
+@if(error()) { <div>{{ error() }}</div> }
 
 <router-outlet />
